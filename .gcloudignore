@@ -1,0 +1,23 @@
+Ignore the Virtual Environment (The 1.6GB culprit!)
+
+venv/
+.venv/
+env/
+
+Ignore the Local Database (We use Pinecone now)
+
+chroma_db/
+
+Ignore Git history
+
+.git/
+.gitignore
+
+Ignore Python cache files
+
+pycache/
+*.pyc
+
+Ignore System files
+
+.DS_Store

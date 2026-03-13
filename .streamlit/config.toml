@@ -1,0 +1,8 @@
+[client]
+toolbarMode = "viewer"
+
+[server]
+enableCORS = false
+enableXsrfProtection = false
+fileWatcherType = "none"
+maxUploadSize = 32 # Matches Cloud Run limit
