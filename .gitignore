@@ -2,10 +2,29 @@
 .env
 venv/
 env/
+.venv/
 
 # Python caches
 __pycache__/
 *.pyc
+*.py[cod]
 
 # Streamlit specifics
 .streamlit/secrets.toml
+
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
+.store/
+.tmp_uploads/
