@@ -1,42 +1,44 @@
-FROM python:3.11
+# ── Trini AI — Dockerfile ─────────────────────────────────────────────────────
+# Base image: Python 3.11 slim (small footprint, Cloud Run optimised)
+FROM python:3.11-slim
+
+# ── System dependencies ───────────────────────────────────────────────────────
+# tesseract-ocr  : OCR fallback for scanned PDFs
+# libgl1         : required by PyMuPDF (fitz) for PDF rendering
+# libglib2.0-0   : required by PyMuPDF
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    libgl1 \
+    libglib2.0-0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Working directory ─────────────────────────────────────────────────────────
 WORKDIR /app
-RUN pip install --upgrade pip
+
+# ── Install Python dependencies ───────────────────────────────────────────────
+# Copy requirements first so Docker can cache this layer.
+# If requirements.txt doesn't change, this layer is reused on every build
+# (much faster rebuilds).
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+
+# ── Copy application code ─────────────────────────────────────────────────────
+COPY app.py .
+COPY core/ ./core/
+
+# Copy Streamlit config if it exists
+COPY .streamlit/ ./.streamlit/
+
+# ── Runtime directories ───────────────────────────────────────────────────────
+# Create the folders the app writes to at runtime.
+# On Cloud Run these are ephemeral (reset on each instance restart) — that is
+# fine because Pinecone holds the persistent vectors.
+RUN mkdir -p .store .tmp_uploads
+
+# ── Port ──────────────────────────────────────────────────────────────────────
+# Cloud Run injects $PORT at runtime (default 8080). Streamlit reads it below.
 EXPOSE 8080
-CMD streamlit run app.py --server.port 8080 --server.address 0.0.0.0
 
-
-
-# # 1. Use a lightweight Python Linux image
-# FROM python:3.11
-
-# # 2. Set the working directory inside the container
-# WORKDIR /app
-
-# # 3. Install system tools needed for PDF parsing (PyMuPDF dependencies)
-# # We removed 'software-properties-common' as it was causing the error.
-# # We added --no-install-recommends to keep the image small.
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     build-essential \
-#     curl \
-#     && rm -rf /var/lib/apt/lists/*
-
-# # 4. Copy your requirements file
-# COPY requirements.txt .
-
-# # 5. Install Python libraries
-# # Added --upgrade pip to ensure smooth installation
-# RUN pip3 install --upgrade pip && \
-#     pip3 install --no-cache-dir -r requirements.txt
-
-# # 6. Copy your app code
-# COPY . .
-
-# # 7. Tell Docker we are using port 8080
-# EXPOSE 8080
-
-# # 8. The command to start Trini AI
-# CMD streamlit run app.py --server.port 8080 --server.address 0.0.0.0
-
+# ── Start command ─────────────────────────────────────────────────────────────
+CMD ["sh", "-c", "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"]
